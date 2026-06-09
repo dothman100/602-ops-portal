@@ -1,18 +1,18 @@
 import { Role } from "@prisma/client";
-import { auth } from "@/auth";
 import { Badge, Card, Field, buttonClass, inputClass } from "@/components/ui";
 import { createEmployee } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
 import { canAccessLocation, canManageEmployees, roleLabels } from "@/lib/permissions";
+import { requireCurrentUser } from "@/lib/session";
 
 export default async function EmployeesPage() {
-  const session = await auth();
+  const user = await requireCurrentUser();
   const [employees, locations] = await Promise.all([
     prisma.employee.findMany({ include: { location: true }, orderBy: [{ location: { code: "asc" } }, { lastName: "asc" }] }),
     prisma.location.findMany({ orderBy: { code: "asc" } }),
   ]);
-  const canManage = canManageEmployees(session?.user.role);
-  const availableLocations = locations.filter((location) => canAccessLocation(session?.user.role, session?.user.locationId, location.id));
+  const canManage = canManageEmployees(user.role);
+  const availableLocations = locations.filter((location) => canAccessLocation(user.role, user.locationId, location.id));
 
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">

@@ -1,10 +1,10 @@
 import { OrderStatus } from "@prisma/client";
 import { ShoppingCart } from "lucide-react";
-import { auth } from "@/auth";
 import { Badge, Card, Field, buttonClass, inputClass } from "@/components/ui";
 import { createOrderRequest } from "@/lib/actions";
 import { prisma } from "@/lib/prisma";
 import { canAccessLocation } from "@/lib/permissions";
+import { requireCurrentUser } from "@/lib/session";
 import { formatDate } from "@/lib/utils";
 
 const statusTone = {
@@ -16,7 +16,7 @@ const statusTone = {
 } as const;
 
 export default async function OrdersPage() {
-  const session = await auth();
+  const user = await requireCurrentUser();
   const [orders, locations, items] = await Promise.all([
     prisma.orderRequest.findMany({
       include: { location: true, lines: { include: { inventoryItem: true } } },
@@ -25,7 +25,7 @@ export default async function OrdersPage() {
     prisma.location.findMany({ orderBy: { code: "asc" } }),
     prisma.inventoryItem.findMany({ include: { location: true }, orderBy: [{ location: { code: "asc" } }, { name: "asc" }] }),
   ]);
-  const availableLocations = locations.filter((location) => canAccessLocation(session?.user.role, session?.user.locationId, location.id));
+  const availableLocations = locations.filter((location) => canAccessLocation(user.role, user.locationId, location.id));
   const availableLocationIds = new Set(availableLocations.map((location) => location.id));
   const availableItems = items.filter((item) => availableLocationIds.has(item.locationId));
 

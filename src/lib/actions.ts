@@ -1,29 +1,26 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { Role, DocumentStatus } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { canAccessLocation, canManageEmployees, canManageInventory } from "@/lib/permissions";
+import { requireCurrentUser } from "@/lib/session";
 
 function stringValue(formData: FormData, key: string) {
   return String(formData.get(key) ?? "").trim();
 }
 
 async function requireSession() {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
-  return session;
+  return requireCurrentUser();
 }
 
 export async function createEmployee(formData: FormData) {
   const session = await requireSession();
-  if (!canManageEmployees(session.user.role)) throw new Error("You do not have permission to manage employees.");
+  if (!canManageEmployees(session.role)) throw new Error("You do not have permission to manage employees.");
 
   const locationId = stringValue(formData, "locationId");
-  if (!canAccessLocation(session.user.role, session.user.locationId, locationId)) throw new Error("You cannot add employees to that location.");
+  if (!canAccessLocation(session.role, session.locationId, locationId)) throw new Error("You cannot add employees to that location.");
 
   const firstName = stringValue(formData, "firstName");
   const lastName = stringValue(formData, "lastName");
@@ -67,7 +64,7 @@ export async function createEmployee(formData: FormData) {
 
 export async function updateDocumentStatus(formData: FormData) {
   const session = await requireSession();
-  if (!canManageEmployees(session.user.role)) throw new Error("You do not have permission to update HR documents.");
+  if (!canManageEmployees(session.role)) throw new Error("You do not have permission to update HR documents.");
 
   const id = stringValue(formData, "id");
   const status = stringValue(formData, "status") as DocumentStatus;
@@ -81,7 +78,7 @@ export async function updateDocumentStatus(formData: FormData) {
 
 export async function updateInventoryQuantity(formData: FormData) {
   const session = await requireSession();
-  if (!canManageInventory(session.user.role)) throw new Error("You do not have permission to update inventory.");
+  if (!canManageInventory(session.role)) throw new Error("You do not have permission to update inventory.");
 
   const id = stringValue(formData, "id");
   const currentQty = Number(stringValue(formData, "currentQty"));
@@ -94,7 +91,7 @@ export async function updateInventoryQuantity(formData: FormData) {
 export async function createOrderRequest(formData: FormData) {
   const session = await requireSession();
   const locationId = stringValue(formData, "locationId");
-  if (!canAccessLocation(session.user.role, session.user.locationId, locationId)) throw new Error("You cannot create orders for that location.");
+  if (!canAccessLocation(session.role, session.locationId, locationId)) throw new Error("You cannot create orders for that location.");
 
   const itemId = stringValue(formData, "inventoryItemId");
   const quantity = Number(stringValue(formData, "quantity"));
@@ -106,7 +103,7 @@ export async function createOrderRequest(formData: FormData) {
     data: {
       requestNo: `REQ-${1001 + count}`,
       locationId,
-      requestedBy: session.user.name ?? session.user.email ?? "Unknown",
+      requestedBy: session.name ?? session.email ?? "Unknown",
       notes: stringValue(formData, "notes"),
       lines: {
         create: [{ inventoryItemId: itemId, quantity }],

@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { CalendarDays, ClipboardCheck, GraduationCap, LayoutDashboard, Package, ShieldCheck, ShoppingCart, Users } from "lucide-react";
-import { auth, signOut } from "@/auth";
 import { roleLabels } from "@/lib/permissions";
+import { logout, requireCurrentUser } from "@/lib/session";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,8 +15,7 @@ const nav = [
 ];
 
 export async function AppShell({ children }: { children: React.ReactNode }) {
-  const session = await auth();
-  if (!session?.user) redirect("/login");
+  const user = await requireCurrentUser();
 
   return (
     <div className="min-h-screen bg-cream">
@@ -35,14 +33,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="absolute bottom-5 left-4 right-4 rounded-lg border border-ink/10 bg-cream p-3">
-          <p className="text-sm font-semibold">{session.user.name}</p>
-          <p className="mt-1 text-xs text-ink/60">{roleLabels[session.user.role]}</p>
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
+          <p className="text-sm font-semibold">{user.name}</p>
+          <p className="mt-1 text-xs text-ink/60">{roleLabels[user.role]}</p>
+          <form action={logout}>
             <button className="mt-3 text-sm font-semibold text-clay" type="submit">
               Sign out
             </button>
@@ -55,12 +48,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/dashboard" className="font-semibold">
               602 Ops Portal
             </Link>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
+            <form action={logout}>
               <button className="text-sm font-semibold text-clay" type="submit">
                 Sign out
               </button>

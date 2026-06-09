@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import { ShieldCheck } from "lucide-react";
-import { auth } from "@/auth";
 import { Badge, Card, StatCard } from "@/components/ui";
 import { prisma } from "@/lib/prisma";
 import { isAdmin, roleLabels } from "@/lib/permissions";
+import { requireCurrentUser } from "@/lib/session";
 
 export default async function AdminPage() {
-  const session = await auth();
-  if (!isAdmin(session?.user.role)) redirect("/dashboard");
+  const user = await requireCurrentUser();
+  if (!isAdmin(user.role)) redirect("/dashboard");
 
   const [users, locations, trainingCount, orderCount] = await Promise.all([
     prisma.user.findMany({ include: { location: true }, orderBy: { email: "asc" } }),
