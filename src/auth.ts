@@ -4,6 +4,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { ensureDemoData } from "@/lib/bootstrap";
 
 declare module "next-auth" {
   interface Session {
@@ -18,6 +19,7 @@ declare module "next-auth" {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
@@ -32,6 +34,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = String(credentials?.email ?? "").toLowerCase();
         const password = String(credentials?.password ?? "");
         if (!email || !password) return null;
+
+        await ensureDemoData();
 
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user?.passwordHash) return null;
