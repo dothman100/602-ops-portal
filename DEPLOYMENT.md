@@ -45,17 +45,9 @@ AUTH_URL=https://your-service-name.onrender.com
 
 `DATABASE_URL` is connected automatically from Render Postgres. `AUTH_SECRET` is generated automatically by Render.
 
-## 4. Seed the Production Database
+## 4. Demo Login
 
-After the first successful deploy:
-
-1. Open the Render service.
-2. Open **Shell**.
-3. Run:
-
-```bash
-npm run prisma:seed
-```
+The Render pre-deploy command runs migrations and seeds the database automatically.
 
 Seeded users all use:
 

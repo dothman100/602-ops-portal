@@ -4,7 +4,7 @@ services:
     runtime: node
     plan: starter
     buildCommand: npm install && npm run build
-    preDeployCommand: npm run prisma:deploy
+    preDeployCommand: npm run prisma:deploy && npm run prisma:seed
     startCommand: npm run start
     autoDeployTrigger: checksPass
     envVars:
@@ -16,6 +16,8 @@ services:
         generateValue: true
       - key: AUTH_URL
         sync: false
+      - key: AUTH_TRUST_HOST
+        value: true
       - key: NODE_VERSION
         value: 22
 

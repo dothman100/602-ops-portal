@@ -161,8 +161,19 @@ async function main() {
       startsAt.setDate(day);
       const endsAt = new Date(startsAt);
       endsAt.setHours(startsAt.getHours() + 8);
-      await prisma.scheduleShift.create({
-        data: {
+      await prisma.scheduleShift.upsert({
+        where: {
+          employeeId_startsAt_position: {
+            employeeId: employee.id,
+            startsAt,
+            position: employee.role === Role.STAFF ? "Barista" : "Floor Lead",
+          },
+        },
+        update: {
+          locationId: employee.locationId,
+          endsAt,
+        },
+        create: {
           employeeId: employee.id,
           locationId: employee.locationId,
           startsAt,

@@ -151,6 +151,8 @@ model ScheduleShift {
   endsAt     DateTime
   position   String
   notes      String?
+
+  @@unique([employeeId, startsAt, position])
 }
 
 model TrainingMaterial {

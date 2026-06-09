@@ -110,7 +110,7 @@ npm install && npm run build
 The Blueprint uses this pre-deploy command:
 
 ```bash
-npm run prisma:deploy
+npm run prisma:deploy && npm run prisma:seed
 ```
 
 The Blueprint uses this start command:
@@ -119,11 +119,7 @@ The Blueprint uses this start command:
 npm run start
 ```
 
-After the first deploy, seed the database from Render Shell:
-
-```bash
-npm run prisma:seed
-```
+The seed script is idempotent and runs during pre-deploy so the initial demo accounts exist on Render.
 
 ## GitHub Integration
 
