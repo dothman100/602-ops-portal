@@ -18,6 +18,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </div>
         <Card>
           <LoginForm error={params.error} />
+          <a className="mt-4 block rounded-md border border-ink/15 px-4 py-2 text-center text-sm font-semibold text-ink transition hover:bg-mint" href="/dashboard">
+            Continue without login
+          </a>
           <div className="mt-5 rounded-md bg-mint p-3 text-sm text-moss">
             Demo accounts include <strong>owner@602ops.com</strong>, <strong>area@602ops.com</strong>, and <strong>staff@602ops.com</strong>.
           </div>

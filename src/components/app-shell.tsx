@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CalendarDays, ClipboardCheck, GraduationCap, LayoutDashboard, Package, ShieldCheck, ShoppingCart, Users } from "lucide-react";
 import { roleLabels } from "@/lib/permissions";
-import { logout, requireCurrentUser } from "@/lib/session";
+import { requireCurrentUser } from "@/lib/session";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -35,11 +35,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
         <div className="absolute bottom-5 left-4 right-4 rounded-lg border border-ink/10 bg-cream p-3">
           <p className="text-sm font-semibold">{user.name}</p>
           <p className="mt-1 text-xs text-ink/60">{roleLabels[user.role]}</p>
-          <form action={logout}>
-            <button className="mt-3 text-sm font-semibold text-clay" type="submit">
-              Sign out
-            </button>
-          </form>
+          <p className="mt-3 text-xs text-ink/45">Login disabled for MVP</p>
         </div>
       </aside>
       <div className="lg:pl-64">
@@ -48,11 +44,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/dashboard" className="font-semibold">
               602 Ops Portal
             </Link>
-            <form action={logout}>
-              <button className="text-sm font-semibold text-clay" type="submit">
-                Sign out
-              </button>
-            </form>
+            <span className="text-sm font-semibold text-moss">Open access</span>
           </div>
           <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {nav.map((item) => (
