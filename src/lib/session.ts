@@ -45,20 +45,24 @@ function verifyToken(token?: string) {
 }
 
 export async function getCurrentUser(): Promise<CurrentUser | null> {
-  const cookieStore = await cookies();
-  const userId = verifyToken(cookieStore.get(cookieName)?.value);
-  if (!userId) return null;
+  try {
+    const cookieStore = await cookies();
+    const userId = verifyToken(cookieStore.get(cookieName)?.value);
+    if (!userId) return null;
 
-  return prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      locationId: true,
-    },
-  });
+    return prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        locationId: true,
+      },
+    });
+  } catch {
+    return null;
+  }
 }
 
 export async function requireCurrentUser() {
@@ -73,16 +77,25 @@ export async function login(formData: FormData) {
 
   if (!email || !password) redirect("/login?error=1");
 
-  await ensureDemoData();
+  let userId: string;
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user?.passwordHash) redirect("/login?error=1");
+  try {
+    await ensureDemoData();
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
-  if (!valid) redirect("/login?error=1");
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user?.passwordHash) redirect("/login?error=1");
+
+    const valid = await bcrypt.compare(password, user.passwordHash);
+    if (!valid) redirect("/login?error=1");
+
+    userId = user.id;
+  } catch (error) {
+    if (String((error as { digest?: string }).digest).startsWith("NEXT_REDIRECT")) throw error;
+    redirect("/login?error=server");
+  }
 
   const cookieStore = await cookies();
-  cookieStore.set(cookieName, createToken(user.id), {
+  cookieStore.set(cookieName, createToken(userId), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

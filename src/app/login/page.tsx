@@ -17,7 +17,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="mt-3 text-sm leading-6 text-ink/65">Sign in to manage staffing, training, HR documents, inventory, and order requests across HB, GW, CM, and the Roastery.</p>
         </div>
         <Card>
-          <LoginForm showError={params.error === "1"} />
+          <LoginForm error={params.error} />
           <div className="mt-5 rounded-md bg-mint p-3 text-sm text-moss">
             Demo accounts include <strong>owner@602ops.com</strong>, <strong>area@602ops.com</strong>, and <strong>staff@602ops.com</strong>.
           </div>
