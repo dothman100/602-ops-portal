@@ -1,62 +1,34 @@
-# GitHub and Render Deployment Handoff
+# Render Deployment
 
-This project is ready for GitHub and Render. Do not paste account passwords into terminal commands or commit them to the repository.
+This Phase 1 prototype is intentionally simple:
 
-## 1. Install Local Tools
+- No authentication
+- No database
+- No Prisma
+- No environment variables
+- No seed step
 
-Install these on your machine:
+## Render Settings
 
-- Git for Windows: https://git-scm.com/download/win
-- GitHub CLI: https://cli.github.com/
-
-After installing, open PowerShell in this folder and run:
-
-```powershell
-.\scripts\push-to-github.ps1
-```
-
-The script will:
-
-- Initialize a Git repository
-- Commit the project
-- Open GitHub's browser login flow through GitHub CLI
-- Create a private `602-ops-portal` GitHub repo
-- Push the app to `main`
-
-## 2. Create the Render Services
-
-1. Go to https://dashboard.render.com/
-2. Choose **New > Blueprint**.
-3. Connect the GitHub repository.
-4. Select the repository containing this app.
-5. Render will read `render.yaml` and create:
-   - `602-ops-portal` web service
-   - `602-ops-portal-db` PostgreSQL database
-
-## 3. Set AUTH_URL
-
-After Render creates the web service, copy its public URL.
-
-In the Render service environment variables, set:
+Use the included `render.yaml` Blueprint, or configure a Render Web Service manually:
 
 ```txt
-AUTH_URL=https://your-service-name.onrender.com
+Build Command: npm install && npm run build
+Start Command: npm run start
 ```
 
-`DATABASE_URL` is connected automatically from Render Postgres. `AUTH_SECRET` is generated automatically by Render.
-
-## 4. Demo Login
-
-The Render pre-deploy command runs migrations and seeds the database automatically.
-
-Seeded users all use:
+The only environment variable currently used is:
 
 ```txt
-Password123!
+NODE_VERSION=22
 ```
 
-Change seeded passwords before using this with real staff.
+## GitHub
 
-## 5. Ongoing Deploys
+Pushes to `main` run GitHub Actions:
 
-The repository includes GitHub Actions CI. Render is configured to deploy after GitHub checks pass.
+- install dependencies
+- lint
+- build
+
+Render should redeploy automatically after checks pass.

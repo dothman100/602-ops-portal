@@ -1,22 +1,18 @@
 import Link from "next/link";
-import { CalendarDays, ClipboardCheck, GraduationCap, LayoutDashboard, Package, ShieldCheck, ShoppingCart, Users } from "lucide-react";
-import { roleLabels } from "@/lib/permissions";
-import { requireCurrentUser } from "@/lib/session";
+import { CalendarDays, ClipboardCheck, GraduationCap, LayoutDashboard, Package, Settings, ShoppingCart, Trophy } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/employees", label: "Employees", icon: Users },
   { href: "/dashboard/schedule", label: "Schedule", icon: CalendarDays },
   { href: "/dashboard/training", label: "Training", icon: GraduationCap },
+  { href: "/dashboard/quizzes", label: "Quizzes", icon: Trophy },
   { href: "/dashboard/hr", label: "HR Docs", icon: ClipboardCheck },
   { href: "/dashboard/inventory", label: "Inventory", icon: Package },
   { href: "/dashboard/orders", label: "Orders", icon: ShoppingCart },
-  { href: "/admin", label: "Admin", icon: ShieldCheck },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ];
 
-export async function AppShell({ children }: { children: React.ReactNode }) {
-  const user = await requireCurrentUser();
-
+export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-cream">
       <aside className="fixed inset-y-0 left-0 hidden w-64 border-r border-ink/10 bg-white px-4 py-5 lg:block">
@@ -33,9 +29,9 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
           ))}
         </nav>
         <div className="absolute bottom-5 left-4 right-4 rounded-lg border border-ink/10 bg-cream p-3">
-          <p className="text-sm font-semibold">{user.name}</p>
-          <p className="mt-1 text-xs text-ink/60">{roleLabels[user.role]}</p>
-          <p className="mt-3 text-xs text-ink/45">Login disabled for MVP</p>
+          <p className="text-sm font-semibold">Prototype Mode</p>
+          <p className="mt-1 text-xs text-ink/60">No login or database required</p>
+          <p className="mt-3 text-xs text-ink/45">Phase 1 clickable UI</p>
         </div>
       </aside>
       <div className="lg:pl-64">
@@ -44,7 +40,7 @@ export async function AppShell({ children }: { children: React.ReactNode }) {
             <Link href="/dashboard" className="font-semibold">
               602 Ops Portal
             </Link>
-            <span className="text-sm font-semibold text-moss">Open access</span>
+            <span className="text-sm font-semibold text-moss">Prototype</span>
           </div>
           <nav className="mt-3 flex gap-2 overflow-x-auto pb-1">
             {nav.map((item) => (

@@ -1,10 +1,6 @@
-import { OrderStatus } from "@prisma/client";
 import { ShoppingCart } from "lucide-react";
 import { Badge, Card, Field, buttonClass, inputClass } from "@/components/ui";
-import { createOrderRequest } from "@/lib/actions";
-import { prisma } from "@/lib/prisma";
-import { canAccessLocation } from "@/lib/permissions";
-import { requireCurrentUser } from "@/lib/session";
+import { inventory, locations, orders } from "@/lib/sample-data";
 import { formatDate } from "@/lib/utils";
 
 const statusTone = {
@@ -15,20 +11,9 @@ const statusTone = {
   REJECTED: "danger",
 } as const;
 
-export default async function OrdersPage() {
-  const user = await requireCurrentUser();
-  const [orders, locations, items] = await Promise.all([
-    prisma.orderRequest.findMany({
-      include: { location: true, lines: { include: { inventoryItem: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.location.findMany({ orderBy: { code: "asc" } }),
-    prisma.inventoryItem.findMany({ include: { location: true }, orderBy: [{ location: { code: "asc" } }, { name: "asc" }] }),
-  ]);
-  const availableLocations = locations.filter((location) => canAccessLocation(user.role, user.locationId, location.id));
-  const availableLocationIds = new Set(availableLocations.map((location) => location.id));
-  const availableItems = items.filter((item) => availableLocationIds.has(item.locationId));
+type OrderStatus = keyof typeof statusTone;
 
+export default function OrdersPage() {
   return (
     <div className="grid gap-6 xl:grid-cols-[1fr_360px]">
       <section>
@@ -38,30 +23,22 @@ export default async function OrdersPage() {
         </div>
         <div className="grid gap-3">
           {orders.map((order) => (
-            <Card key={order.id}>
+            <Card key={order.request}>
               <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h2 className="text-lg font-semibold">{order.requestNo}</h2>
-                    <Badge tone={statusTone[order.status]}>{order.status}</Badge>
+                    <h2 className="text-lg font-semibold">{order.request}</h2>
+                    <Badge tone={statusTone[order.status as OrderStatus]}>{order.status}</Badge>
                   </div>
                   <p className="mt-1 text-sm text-ink/55">
-                    {order.location.code} / Requested by {order.requestedBy} / {formatDate(order.createdAt)}
+                    {order.location} / Requested by {order.owner} / {formatDate(new Date())}
                   </p>
                 </div>
                 <ShoppingCart className="h-5 w-5 text-moss" />
               </div>
-              <div className="grid gap-2">
-                {order.lines.map((line) => (
-                  <div key={line.id} className="flex items-center justify-between rounded-md bg-cream px-3 py-2 text-sm">
-                    <span>{line.inventoryItem.name}</span>
-                    <span className="font-semibold">
-                      {line.quantity} {line.inventoryItem.unit.toLowerCase()}
-                    </span>
-                  </div>
-                ))}
+              <div className="rounded-md bg-cream px-3 py-2 text-sm">
+                <span>{order.item}</span>
               </div>
-              {order.notes ? <p className="mt-3 text-sm text-ink/60">{order.notes}</p> : null}
             </Card>
           ))}
         </div>
@@ -70,21 +47,19 @@ export default async function OrdersPage() {
       <Card>
         <h2 className="text-lg font-semibold">New Request</h2>
         <p className="mt-1 text-sm text-ink/55">Create a submitted order request for manager review.</p>
-        <form action={createOrderRequest} className="mt-4 grid gap-3">
+        <form className="mt-4 grid gap-3">
           <Field label="Location">
             <select className={inputClass} name="locationId">
-              {availableLocations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.code} - {location.name}
-                </option>
+              {locations.map((location) => (
+                <option key={location} value={location}>{location}</option>
               ))}
             </select>
           </Field>
           <Field label="Item">
             <select className={inputClass} name="inventoryItemId">
-              {availableItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.location.code} - {item.name}
+              {inventory.map((item) => (
+                <option key={`${item.location}-${item.item}`} value={item.item}>
+                  {item.location} - {item.item}
                 </option>
               ))}
             </select>
@@ -96,10 +71,10 @@ export default async function OrdersPage() {
             <textarea className={inputClass} name="notes" rows={4} />
           </Field>
           <button className={buttonClass} type="submit">
-            Submit request
+            Preview request
           </button>
         </form>
-        <div className="mt-4 text-xs text-ink/45">Statuses supported: {Object.values(OrderStatus).join(", ")}</div>
+        <div className="mt-4 text-xs text-ink/45">Prototype only. This form does not save yet.</div>
       </Card>
     </div>
   );

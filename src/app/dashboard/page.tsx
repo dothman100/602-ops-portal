@@ -1,27 +1,10 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
-import { prisma } from "@/lib/prisma";
+import { ArrowRight, ClipboardList, Package, Users } from "lucide-react";
 import { Badge, Card, StatCard } from "@/components/ui";
-import { formatDate, formatTime } from "@/lib/utils";
+import { inventory, orders, shifts, stats } from "@/lib/sample-data";
 
-export default async function DashboardPage() {
-  const [employeeCount, activeOrders, lowStock, incompleteDocs, upcomingShifts] = await Promise.all([
-    prisma.employee.count({ where: { status: "ACTIVE" } }),
-    prisma.orderRequest.count({ where: { status: { in: ["SUBMITTED", "APPROVED"] } } }),
-    prisma.inventoryItem.findMany({
-      where: { currentQty: { lt: prisma.inventoryItem.fields.parLevel } },
-      include: { location: true },
-      orderBy: { currentQty: "asc" },
-      take: 6,
-    }),
-    prisma.employeeDocument.count({ where: { status: { not: "COMPLETE" } } }),
-    prisma.scheduleShift.findMany({
-      where: { startsAt: { gte: new Date() } },
-      include: { employee: true, location: true },
-      orderBy: { startsAt: "asc" },
-      take: 6,
-    }),
-  ]);
+export default function DashboardPage() {
+  const lowStock = inventory.filter((item) => item.count < item.par);
 
   return (
     <div className="grid gap-6">
@@ -37,12 +20,7 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Active employees" value={employeeCount} detail="Across HB, GW, CM, and Roastery" />
-        <StatCard label="Open order requests" value={activeOrders} detail="Submitted or approved" />
-        <StatCard label="Low stock items" value={lowStock.length} detail="Below par level" />
-        <StatCard label="Incomplete HR docs" value={incompleteDocs} detail="Missing or pending" />
-      </div>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">{stats.map((stat) => <StatCard key={stat.label} {...stat} />)}</div>
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
         <Card>
@@ -51,19 +29,19 @@ export default async function DashboardPage() {
               <h2 className="text-lg font-semibold">Inventory Watchlist</h2>
               <p className="text-sm text-ink/55">Items currently below par.</p>
             </div>
-            <AlertTriangle className="h-5 w-5 text-clay" />
+            <Package className="h-5 w-5 text-clay" />
           </div>
           <div className="grid gap-3">
             {lowStock.map((item) => (
-              <div key={item.id} className="grid gap-3 rounded-md border border-ink/10 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
+              <div key={item.item} className="grid gap-3 rounded-md border border-ink/10 p-3 sm:grid-cols-[1fr_auto] sm:items-center">
                 <div>
-                  <p className="font-semibold">{item.name}</p>
+                  <p className="font-semibold">{item.item}</p>
                   <p className="text-sm text-ink/55">
-                    {item.location.code} / {item.category}
+                    {item.location}
                   </p>
                 </div>
                 <Badge tone="danger">
-                  {item.currentQty} / {item.parLevel} {item.unit.toLowerCase()}
+                  {item.count} / {item.par} {item.unit}
                 </Badge>
               </div>
             ))}
@@ -76,22 +54,41 @@ export default async function DashboardPage() {
               <h2 className="text-lg font-semibold">Upcoming Shifts</h2>
               <p className="text-sm text-ink/55">Next scheduled coverage.</p>
             </div>
-            <CheckCircle2 className="h-5 w-5 text-moss" />
+            <Users className="h-5 w-5 text-moss" />
           </div>
           <div className="grid gap-3">
-            {upcomingShifts.map((shift) => (
-              <div key={shift.id} className="rounded-md bg-cream p-3">
-                <p className="font-semibold">
-                  {shift.employee.firstName} {shift.employee.lastName}
-                </p>
+            {shifts.slice(0, 4).map((shift) => (
+              <div key={`${shift.day}-${shift.person}`} className="rounded-md bg-cream p-3">
+                <p className="font-semibold">{shift.person}</p>
                 <p className="mt-1 text-sm text-ink/60">
-                  {shift.location.code} / {shift.position} / {formatDate(shift.startsAt)} {formatTime(shift.startsAt)}
+                  {shift.location} / {shift.role} / {shift.day} {shift.time}
                 </p>
               </div>
             ))}
           </div>
         </Card>
       </div>
+
+      <Card>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold">Recent Order Requests</h2>
+            <p className="text-sm text-ink/55">Sample ordering workflow preview.</p>
+          </div>
+          <ClipboardList className="h-5 w-5 text-moss" />
+        </div>
+        <div className="grid gap-3 md:grid-cols-3">
+          {orders.map((order) => (
+            <div key={order.request} className="rounded-md border border-ink/10 p-3">
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-semibold">{order.request}</p>
+                <Badge>{order.status}</Badge>
+              </div>
+              <p className="mt-2 text-sm text-ink/60">{order.location} / {order.item}</p>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

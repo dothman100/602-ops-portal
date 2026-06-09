@@ -1,14 +1,8 @@
 import { BookOpenCheck } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { Badge, Card } from "@/components/ui";
-import { roleLabels } from "@/lib/permissions";
+import { trainingMaterials } from "@/lib/sample-data";
 
-export default async function TrainingPage() {
-  const materials = await prisma.trainingMaterial.findMany({
-    include: { quiz: { include: { questions: true, attempts: true } } },
-    orderBy: { category: "asc" },
-  });
-
+export default function TrainingPage() {
   return (
     <div className="grid gap-6">
       <div>
@@ -16,8 +10,8 @@ export default async function TrainingPage() {
         <p className="mt-2 text-sm text-ink/60">Categorized training materials with required roles and attached quizzes.</p>
       </div>
       <div className="grid gap-4 lg:grid-cols-2">
-        {materials.map((material) => (
-          <Card key={material.id}>
+        {trainingMaterials.map((material) => (
+          <Card key={material.title}>
             <div className="flex items-start justify-between gap-3">
               <div>
                 <Badge>{material.category}</Badge>
@@ -25,22 +19,11 @@ export default async function TrainingPage() {
               </div>
               <BookOpenCheck className="h-5 w-5 text-moss" />
             </div>
-            <p className="mt-3 text-sm leading-6 text-ink/65">{material.summary}</p>
+            <p className="mt-3 text-sm leading-6 text-ink/65">Placeholder lesson page for {material.audience}. Content can become PDFs, videos, checklists, or embedded SOPs later.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              {material.requiredFor.map((role) => (
-                <Badge key={role} tone="good">
-                  {roleLabels[role]}
-                </Badge>
-              ))}
+              <Badge tone="good">{material.audience}</Badge>
+              <Badge tone={material.status === "Ready" ? "good" : "warn"}>{material.status}</Badge>
             </div>
-            {material.quiz ? (
-              <div className="mt-5 rounded-md border border-ink/10 bg-cream p-4">
-                <p className="font-semibold">{material.quiz.title}</p>
-                <p className="mt-1 text-sm text-ink/55">
-                  {material.quiz.questions.length} questions / {material.quiz.passingScore}% passing score / {material.quiz.attempts.length} attempts
-                </p>
-              </div>
-            ) : null}
           </Card>
         ))}
       </div>
