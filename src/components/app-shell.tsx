@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, ClipboardCheck, GraduationCap, LayoutDashboard, LogOut, Package, Settings, ShoppingCart, Trophy, Users } from "lucide-react";
+import { CalendarDays, ClipboardCheck, Columns3, GraduationCap, LayoutDashboard, LogOut, Package, Settings, ShoppingCart, Trophy, Users } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useAuth, type Permission } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, permission: "dashboard" },
+  { href: "/dashboard/operations", label: "Operations", icon: Columns3, permission: "operations" },
   { href: "/dashboard/schedule", label: "Schedule", icon: CalendarDays, permission: "schedule" },
   { href: "/dashboard/training", label: "Training", icon: GraduationCap, permission: "training" },
   { href: "/dashboard/quizzes", label: "Quizzes", icon: Trophy, permission: "quizzes" },

@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ShieldCheck, UserPlus } from "lucide-react";
+import { ShieldCheck, UserPlus, Users } from "lucide-react";
 import { Badge, Card, Field, buttonClass, inputClass } from "@/components/ui";
-import { locations } from "@/lib/sample-data";
+import { locations, storeProfiles, teamMembers } from "@/lib/sample-data";
 import { permissionLabels, roleDefaults, useAuth, type Account, type Permission } from "@/lib/auth-store";
 
 const roles: Account["role"][] = ["Owner", "Area Manager", "Store Manager", "Shift Lead", "Staff"];
@@ -27,7 +27,31 @@ export default function EmployeesPage() {
       <section>
         <div className="mb-4">
           <h1 className="text-3xl font-semibold tracking-normal">Employee Accounts</h1>
-          <p className="mt-2 text-sm text-ink/60">Create prototype accounts and decide which areas each person can see.</p>
+          <p className="mt-2 text-sm text-ink/60">Create prototype accounts, review store teams, and decide which areas each person can see.</p>
+        </div>
+        <div className="mb-6 grid gap-4 lg:grid-cols-3">
+          {storeProfiles.filter((store) => store.code !== "Roastery").map((store) => (
+            <Card key={store.code}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold">{store.code}</h2>
+                  <p className="mt-1 text-sm text-ink/55">Managers: {store.managers.join(" / ")}</p>
+                </div>
+                <Users className="h-5 w-5 text-moss" />
+              </div>
+              <div className="mt-4 grid gap-2">
+                {teamMembers.filter((member) => member.location === store.code).map((member) => (
+                  <div key={member.name} className="rounded-md bg-cream p-2 text-sm">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold">{member.name}</span>
+                      <Badge>{member.role}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-ink/50">Training {member.training}% / {member.availability}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
         </div>
         <div className="grid gap-3">
           {visibleAccounts.map((account) => (

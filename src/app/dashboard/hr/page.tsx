@@ -14,7 +14,7 @@ export default function HrPage() {
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold">{employee.employee}</h2>
-                <p className="text-sm text-ink/55">{employee.location}</p>
+                <p className="text-sm text-ink/55">{employee.location} / {employee.role} / Review {employee.nextReview}</p>
               </div>
               <Badge tone={employee.missing === 0 ? "good" : "warn"}>{employee.complete} complete</Badge>
             </div>

@@ -23,10 +23,13 @@ export default function InventoryPage() {
                   <Badge tone={belowPar ? "danger" : "good"}>{belowPar ? "Below par" : "Healthy"}</Badge>
                 </div>
                 <p className="mt-1 text-sm text-ink/55">
-                  {item.location} / Par {item.par} {item.unit}
+                  {item.location} / {item.category} / Par {item.par} {item.unit} / {item.vendor}
                 </p>
               </div>
-              <div className="rounded-md bg-cream px-4 py-3 text-sm font-semibold">{item.count} {item.unit}</div>
+              <div className="grid gap-2 text-sm md:text-right">
+                <div className="rounded-md bg-cream px-4 py-3 font-semibold">{item.count} {item.unit}</div>
+                <Badge tone={belowPar ? "warn" : "good"}>{item.reorder}</Badge>
+              </div>
             </Card>
           );
         })}

@@ -37,7 +37,7 @@ export default function OrdersPage() {
                 <ShoppingCart className="h-5 w-5 text-moss" />
               </div>
               <div className="rounded-md bg-cream px-3 py-2 text-sm">
-                <span>{order.item}</span>
+                <span>{order.item} / Needed {order.needed} / {order.source}</span>
               </div>
             </Card>
           ))}

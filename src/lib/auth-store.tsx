@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 
-export type Permission = "dashboard" | "schedule" | "training" | "quizzes" | "hr" | "inventory" | "orders" | "employees" | "settings";
+export type Permission = "dashboard" | "operations" | "schedule" | "training" | "quizzes" | "hr" | "inventory" | "orders" | "employees" | "settings";
 
 export type Account = {
   id: string;
@@ -25,10 +25,11 @@ type AuthContextValue = {
   can: (permission: Permission) => boolean;
 };
 
-const allPermissions: Permission[] = ["dashboard", "schedule", "training", "quizzes", "hr", "inventory", "orders", "employees", "settings"];
+const allPermissions: Permission[] = ["dashboard", "operations", "schedule", "training", "quizzes", "hr", "inventory", "orders", "employees", "settings"];
 
 export const permissionLabels: Record<Permission, string> = {
   dashboard: "Dashboard",
+  operations: "Operations Board",
   schedule: "Schedule",
   training: "Training Materials",
   quizzes: "Quizzes",
@@ -42,8 +43,8 @@ export const permissionLabels: Record<Permission, string> = {
 export const roleDefaults: Record<Account["role"], Permission[]> = {
   Owner: allPermissions,
   "Area Manager": allPermissions,
-  "Store Manager": ["dashboard", "schedule", "training", "quizzes", "hr", "inventory", "orders"],
-  "Shift Lead": ["dashboard", "schedule", "training", "quizzes", "inventory", "orders"],
+  "Store Manager": ["dashboard", "operations", "schedule", "training", "quizzes", "hr", "inventory", "orders"],
+  "Shift Lead": ["dashboard", "operations", "schedule", "training", "quizzes", "inventory", "orders"],
   Staff: ["dashboard", "schedule", "training", "quizzes"],
 };
 
