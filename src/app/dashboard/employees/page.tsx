@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ShieldCheck, UserPlus, Users } from "lucide-react";
+import { Pencil, ShieldCheck, UserPlus, Users, X } from "lucide-react";
 import { Badge, Card, Field, buttonClass, inputClass } from "@/components/ui";
 import { locations, storeProfiles, teamMembers } from "@/lib/sample-data";
 import { permissionLabels, roleDefaults, useAuth, type Account, type Permission } from "@/lib/auth-store";
@@ -10,9 +10,12 @@ const roles: Account["role"][] = ["Owner", "Area Manager", "Store Manager", "Shi
 const allPermissionKeys = Object.keys(permissionLabels) as Permission[];
 
 export default function EmployeesPage() {
-  const { accounts, createAccount, can } = useAuth();
+  const { accounts, createAccount, updateAccount, can } = useAuth();
   const [role, setRole] = useState<Account["role"]>("Staff");
   const [permissions, setPermissions] = useState<Permission[]>(roleDefaults.Staff);
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [editRole, setEditRole] = useState<Account["role"]>("Staff");
+  const [editPermissions, setEditPermissions] = useState<Permission[]>(roleDefaults.Staff);
   const [message, setMessage] = useState("");
   const canManage = can("employees");
 
@@ -20,6 +23,18 @@ export default function EmployeesPage() {
 
   function togglePermission(permission: Permission) {
     setPermissions((current) => (current.includes(permission) ? current.filter((item) => item !== permission) : [...current, permission]));
+  }
+
+  function startEditing(account: Account) {
+    if (!canManage) return;
+    setEditingAccount(account);
+    setEditRole(account.role);
+    setEditPermissions(account.permissions);
+    setMessage("");
+  }
+
+  function toggleEditPermission(permission: Permission) {
+    setEditPermissions((current) => (current.includes(permission) ? current.filter((item) => item !== permission) : [...current, permission]));
   }
 
   return (
@@ -55,13 +70,15 @@ export default function EmployeesPage() {
         </div>
         <div className="grid gap-3">
           {visibleAccounts.map((account) => (
-            <Card key={account.id}>
+            <button key={account.id} className="block text-left" disabled={!canManage} onClick={() => startEditing(account)} type="button">
+              <Card className={editingAccount?.id === account.id ? "border-moss ring-2 ring-moss/20" : "transition hover:border-moss/50"}>
               <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-start">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h2 className="text-lg font-semibold">{account.name}</h2>
                     <Badge tone={account.role === "Owner" ? "good" : "neutral"}>{account.role}</Badge>
                     <Badge>{account.location}</Badge>
+                    <Badge tone="warn"><Pencil className="mr-1 h-3 w-3" /> Click to edit</Badge>
                   </div>
                   <p className="mt-1 text-sm text-ink/55">{account.email}</p>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -74,7 +91,8 @@ export default function EmployeesPage() {
                   Prototype password: <span className="font-semibold text-ink">{account.password}</span>
                 </div>
               </div>
-            </Card>
+              </Card>
+            </button>
           ))}
         </div>
       </section>
@@ -82,31 +100,110 @@ export default function EmployeesPage() {
       <Card>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold">Create Account</h2>
-            <p className="mt-1 text-sm text-ink/55">Saved in this browser for prototype testing.</p>
+            <h2 className="text-lg font-semibold">{editingAccount ? "Edit Account" : "Create Account"}</h2>
+            <p className="mt-1 text-sm text-ink/55">{editingAccount ? "Update account details and page permissions." : "Saved in this browser for prototype testing."}</p>
           </div>
-          <UserPlus className="h-5 w-5 text-moss" />
+          {editingAccount ? (
+            <button className="rounded-md p-1 text-ink/50 transition hover:bg-ink/5 hover:text-ink" onClick={() => setEditingAccount(null)} type="button" aria-label="Close editor">
+              <X className="h-5 w-5" />
+            </button>
+          ) : (
+            <UserPlus className="h-5 w-5 text-moss" />
+          )}
         </div>
-        <form
-          className="mt-4 grid gap-3"
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (!canManage) return;
-            const formData = new FormData(event.currentTarget);
-            createAccount({
-              name: String(formData.get("name")),
-              email: String(formData.get("email")),
-              password: String(formData.get("password")),
-              role,
-              location: String(formData.get("location")) as Account["location"],
-              permissions,
-            });
-            event.currentTarget.reset();
-            setRole("Staff");
-            setPermissions(roleDefaults.Staff);
-            setMessage("Account created.");
-          }}
-        >
+
+        {editingAccount ? (
+          <form
+            key={editingAccount.id}
+            className="mt-4 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!canManage || !editingAccount) return;
+              const formData = new FormData(event.currentTarget);
+              const updatedAccount = {
+                ...editingAccount,
+                name: String(formData.get("name")),
+                email: String(formData.get("email")),
+                password: String(formData.get("password")),
+                role: editRole,
+                location: String(formData.get("location")) as Account["location"],
+                permissions: editPermissions,
+              };
+              updateAccount(updatedAccount);
+              setEditingAccount(updatedAccount);
+              setMessage("Account updated.");
+            }}
+          >
+            <Field label="Name">
+              <input className={inputClass} name="name" defaultValue={editingAccount.name} required disabled={!canManage} />
+            </Field>
+            <Field label="Email">
+              <input className={inputClass} name="email" type="email" defaultValue={editingAccount.email} required disabled={!canManage} />
+            </Field>
+            <Field label="Password">
+              <input className={inputClass} name="password" defaultValue={editingAccount.password} required disabled={!canManage} />
+            </Field>
+            <Field label="Role">
+              <select
+                className={inputClass}
+                value={editRole}
+                onChange={(event) => {
+                  const nextRole = event.target.value as Account["role"];
+                  setEditRole(nextRole);
+                  setEditPermissions(roleDefaults[nextRole]);
+                }}
+                disabled={!canManage}
+              >
+                {roles.map((item) => (
+                  <option key={item} value={item}>{item}</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Location">
+              <select className={inputClass} name="location" defaultValue={editingAccount.location} disabled={!canManage}>
+                {["All", ...locations].map((location) => (
+                  <option key={location} value={location}>{location}</option>
+                ))}
+              </select>
+            </Field>
+            <div className="rounded-md border border-ink/10 p-3">
+              <div className="mb-3 flex items-center gap-2">
+                <ShieldCheck className="h-4 w-4 text-moss" />
+                <p className="text-sm font-semibold">Permissions</p>
+              </div>
+              <div className="grid gap-2">
+                {allPermissionKeys.map((permission) => (
+                  <label key={permission} className="flex items-center gap-2 text-sm text-ink/75">
+                    <input checked={editPermissions.includes(permission)} disabled={!canManage} onChange={() => toggleEditPermission(permission)} type="checkbox" />
+                    {permissionLabels[permission]}
+                  </label>
+                ))}
+              </div>
+            </div>
+            {message ? <p className="rounded-md bg-mint px-3 py-2 text-sm font-semibold text-moss">{message}</p> : null}
+            <button className={buttonClass} disabled={!canManage} type="submit">Save changes</button>
+          </form>
+        ) : (
+          <form
+            className="mt-4 grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!canManage) return;
+              const formData = new FormData(event.currentTarget);
+              createAccount({
+                name: String(formData.get("name")),
+                email: String(formData.get("email")),
+                password: String(formData.get("password")),
+                role,
+                location: String(formData.get("location")) as Account["location"],
+                permissions,
+              });
+              event.currentTarget.reset();
+              setRole("Staff");
+              setPermissions(roleDefaults.Staff);
+              setMessage("Account created.");
+            }}
+          >
           <Field label="Name">
             <input className={inputClass} name="name" placeholder="Alex Rivera" required disabled={!canManage} />
           </Field>
@@ -155,7 +252,8 @@ export default function EmployeesPage() {
           </div>
           {message ? <p className="rounded-md bg-mint px-3 py-2 text-sm font-semibold text-moss">{message}</p> : null}
           <button className={buttonClass} disabled={!canManage} type="submit">Create account</button>
-        </form>
+          </form>
+        )}
       </Card>
     </div>
   );

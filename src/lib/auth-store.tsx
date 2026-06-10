@@ -10,7 +10,7 @@ export type Account = {
   email: string;
   password: string;
   role: "Owner" | "Area Manager" | "Store Manager" | "Shift Lead" | "Staff";
-  location: "All" | "HB" | "GW" | "CM" | "Roastery";
+  location: "All" | "602 HB" | "602 GW" | "602 CM" | "Roastery";
   permissions: Permission[];
 };
 
@@ -64,7 +64,7 @@ const starterAccounts: Account[] = [
     email: "hb.manager@602ops.com",
     password: "Manager123!",
     role: "Store Manager",
-    location: "HB",
+    location: "602 HB",
     permissions: roleDefaults["Store Manager"],
   },
   {
@@ -73,7 +73,7 @@ const starterAccounts: Account[] = [
     email: "staff@602ops.com",
     password: "Staff123!",
     role: "Staff",
-    location: "HB",
+    location: "602 HB",
     permissions: roleDefaults.Staff,
   },
 ];
@@ -83,11 +83,26 @@ const currentKey = "602_ops_current_account";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function normalizeLocation(location: string): Account["location"] {
+  if (location === "HB") return "602 HB";
+  if (location === "GW") return "602 GW";
+  if (location === "CM") return "602 CM";
+  if (location === "602 HB" || location === "602 GW" || location === "602 CM" || location === "Roastery" || location === "All") return location;
+  return "602 HB";
+}
+
+function normalizeAccount(account: Account): Account {
+  return {
+    ...account,
+    location: normalizeLocation(account.location),
+  };
+}
+
 function readAccounts() {
   try {
     const raw = window.localStorage.getItem(accountsKey);
     if (!raw) return starterAccounts;
-    const savedAccounts = JSON.parse(raw) as Account[];
+    const savedAccounts = (JSON.parse(raw) as Account[]).map(normalizeAccount);
     const missingStarterAccounts = starterAccounts.filter((starter) => !savedAccounts.some((account) => account.email.toLowerCase() === starter.email.toLowerCase()));
     return [...savedAccounts, ...missingStarterAccounts];
   } catch {
