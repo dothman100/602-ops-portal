@@ -2,7 +2,7 @@ services:
   - type: web
     name: 602-ops-portal
     runtime: node
-    plan: starter
+    plan: free
     buildCommand: npm install && npm run build
     startCommand: npm run start
     autoDeployTrigger: checksPass
