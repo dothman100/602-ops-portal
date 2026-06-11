@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { Account, Permission, permissionLabels, roleDefaults } from "@/lib/auth-types";
 
 type AccountInput = Omit<Account, "id"> & { password: string };
@@ -40,11 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [isReady, setIsReady] = useState(false);
 
-  async function refreshAccounts() {
+  const refreshAccounts = useCallback(async () => {
     if (!currentAccount?.permissions.includes("employees")) return;
     const data = await apiRequest<{ accounts: Account[] }>("/api/accounts");
     setAccounts(data.accounts);
-  }
+  }, [currentAccount]);
 
   useEffect(() => {
     let mounted = true;
@@ -70,8 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       setAccounts(currentAccount ? [currentAccount] : []);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentAccount?.id]);
+  }, [currentAccount, refreshAccounts]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
@@ -116,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return Boolean(currentAccount?.permissions.includes(permission));
       },
     }),
-    [accounts, currentAccount, isReady],
+    [accounts, currentAccount, isReady, refreshAccounts],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
