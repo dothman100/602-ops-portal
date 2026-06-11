@@ -42,7 +42,7 @@ export default function EmployeesPage() {
       <section>
         <div className="mb-4">
           <h1 className="text-3xl font-semibold tracking-normal">Employee Accounts</h1>
-          <p className="mt-2 text-sm text-ink/60">Create prototype accounts, review store teams, and decide which areas each person can see.</p>
+          <p className="mt-2 text-sm text-ink/60">Create employee logins, review store teams, and decide which areas each person can see.</p>
         </div>
         <div className="mb-6 grid gap-4 lg:grid-cols-3">
           {storeProfiles.filter((store) => store.code !== "Roastery").map((store) => (
@@ -87,8 +87,8 @@ export default function EmployeesPage() {
                     ))}
                   </div>
                 </div>
-                <div className="rounded-md bg-cream p-3 text-xs text-ink/55">
-                  Prototype password: <span className="font-semibold text-ink">{account.password}</span>
+                <div className="rounded-md bg-cream p-3 text-xs font-semibold text-ink/55">
+                  Password protected
                 </div>
               </div>
               </Card>
@@ -101,7 +101,7 @@ export default function EmployeesPage() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-lg font-semibold">{editingAccount ? "Edit Account" : "Create Account"}</h2>
-            <p className="mt-1 text-sm text-ink/55">{editingAccount ? "Update account details and page permissions." : "Saved in this browser for prototype testing."}</p>
+            <p className="mt-1 text-sm text-ink/55">{editingAccount ? "Update account details, reset password, and page permissions." : "Saved on the server for employee login."}</p>
           </div>
           {editingAccount ? (
             <button className="rounded-md p-1 text-ink/50 transition hover:bg-ink/5 hover:text-ink" onClick={() => setEditingAccount(null)} type="button" aria-label="Close editor">
@@ -116,22 +116,27 @@ export default function EmployeesPage() {
           <form
             key={editingAccount.id}
             className="mt-4 grid gap-3"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
               if (!canManage || !editingAccount) return;
               const formData = new FormData(event.currentTarget);
+              const password = String(formData.get("password") || "");
               const updatedAccount = {
                 ...editingAccount,
                 name: String(formData.get("name")),
                 email: String(formData.get("email")),
-                password: String(formData.get("password")),
                 role: editRole,
                 location: String(formData.get("location")) as Account["location"],
                 permissions: editPermissions,
+                ...(password ? { password } : {}),
               };
-              updateAccount(updatedAccount);
-              setEditingAccount(updatedAccount);
-              setMessage("Account updated.");
+              try {
+                await updateAccount(updatedAccount);
+                setEditingAccount({ ...editingAccount, ...updatedAccount });
+                setMessage("Account updated.");
+              } catch (error) {
+                setMessage(error instanceof Error ? error.message : "Could not update account.");
+              }
             }}
           >
             <Field label="Name">
@@ -140,8 +145,8 @@ export default function EmployeesPage() {
             <Field label="Email">
               <input className={inputClass} name="email" type="email" defaultValue={editingAccount.email} required disabled={!canManage} />
             </Field>
-            <Field label="Password">
-              <input className={inputClass} name="password" defaultValue={editingAccount.password} required disabled={!canManage} />
+            <Field label="New password">
+              <input className={inputClass} name="password" placeholder="Leave blank to keep current password" disabled={!canManage} />
             </Field>
             <Field label="Role">
               <select
@@ -186,22 +191,26 @@ export default function EmployeesPage() {
         ) : (
           <form
             className="mt-4 grid gap-3"
-            onSubmit={(event) => {
+            onSubmit={async (event) => {
               event.preventDefault();
               if (!canManage) return;
               const formData = new FormData(event.currentTarget);
-              createAccount({
-                name: String(formData.get("name")),
-                email: String(formData.get("email")),
-                password: String(formData.get("password")),
-                role,
-                location: String(formData.get("location")) as Account["location"],
-                permissions,
-              });
-              event.currentTarget.reset();
-              setRole("Staff");
-              setPermissions(roleDefaults.Staff);
-              setMessage("Account created.");
+              try {
+                await createAccount({
+                  name: String(formData.get("name")),
+                  email: String(formData.get("email")),
+                  password: String(formData.get("password")),
+                  role,
+                  location: String(formData.get("location")) as Account["location"],
+                  permissions,
+                });
+                event.currentTarget.reset();
+                setRole("Staff");
+                setPermissions(roleDefaults.Staff);
+                setMessage("Account created.");
+              } catch (error) {
+                setMessage(error instanceof Error ? error.message : "Could not create account.");
+              }
             }}
           >
           <Field label="Name">

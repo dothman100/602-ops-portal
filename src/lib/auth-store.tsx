@@ -1,159 +1,117 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { Account, Permission, permissionLabels, roleDefaults } from "@/lib/auth-types";
 
-export type Permission = "dashboard" | "operations" | "schedule" | "training" | "quizzes" | "hr" | "inventory" | "orders" | "employees" | "settings";
-
-export type Account = {
-  id: string;
-  name: string;
-  email: string;
-  password: string;
-  role: "Owner" | "Area Manager" | "Store Manager" | "Shift Lead" | "Staff";
-  location: "All" | "602 HB" | "602 GW" | "602 CM" | "Roastery";
-  permissions: Permission[];
-};
+type AccountInput = Omit<Account, "id"> & { password: string };
+type AccountUpdateInput = Account & { password?: string };
 
 type AuthContextValue = {
   accounts: Account[];
   currentAccount: Account | null;
   isReady: boolean;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
-  createAccount: (account: Omit<Account, "id">) => void;
-  updateAccount: (account: Account) => void;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  createAccount: (account: AccountInput) => Promise<void>;
+  updateAccount: (account: AccountUpdateInput) => Promise<void>;
+  refreshAccounts: () => Promise<void>;
   can: (permission: Permission) => boolean;
 };
 
-const allPermissions: Permission[] = ["dashboard", "operations", "schedule", "training", "quizzes", "hr", "inventory", "orders", "employees", "settings"];
-
-export const permissionLabels: Record<Permission, string> = {
-  dashboard: "Dashboard",
-  operations: "Operations Board",
-  schedule: "Schedule",
-  training: "Training Materials",
-  quizzes: "Quizzes",
-  hr: "HR Records",
-  inventory: "Inventory",
-  orders: "Ordering",
-  employees: "Employee Accounts",
-  settings: "Settings",
-};
-
-export const roleDefaults: Record<Account["role"], Permission[]> = {
-  Owner: allPermissions,
-  "Area Manager": allPermissions,
-  "Store Manager": ["dashboard", "operations", "schedule", "training", "quizzes", "hr", "inventory", "orders"],
-  "Shift Lead": ["dashboard", "operations", "schedule", "training", "quizzes", "inventory", "orders"],
-  Staff: ["dashboard", "schedule", "training", "quizzes"],
-};
-
-const starterAccounts: Account[] = [
-  {
-    id: "owner-dothman",
-    name: "Daniel Othman",
-    email: "dothman12@gmail.com",
-    password: "602Admin!",
-    role: "Owner",
-    location: "All",
-    permissions: allPermissions,
-  },
-  {
-    id: "sample-manager",
-    name: "Hannah Brooks",
-    email: "hb.manager@602ops.com",
-    password: "Manager123!",
-    role: "Store Manager",
-    location: "602 HB",
-    permissions: roleDefaults["Store Manager"],
-  },
-  {
-    id: "sample-staff",
-    name: "Jules Nava",
-    email: "staff@602ops.com",
-    password: "Staff123!",
-    role: "Staff",
-    location: "602 HB",
-    permissions: roleDefaults.Staff,
-  },
-];
-
-const accountsKey = "602_ops_accounts";
-const currentKey = "602_ops_current_account";
-
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-function normalizeLocation(location: string): Account["location"] {
-  if (location === "HB") return "602 HB";
-  if (location === "GW") return "602 GW";
-  if (location === "CM") return "602 CM";
-  if (location === "602 HB" || location === "602 GW" || location === "602 CM" || location === "Roastery" || location === "All") return location;
-  return "602 HB";
-}
-
-function normalizeAccount(account: Account): Account {
-  return {
-    ...account,
-    location: normalizeLocation(account.location),
-  };
-}
-
-function readAccounts() {
-  try {
-    const raw = window.localStorage.getItem(accountsKey);
-    if (!raw) return starterAccounts;
-    const savedAccounts = (JSON.parse(raw) as Account[]).map(normalizeAccount);
-    const missingStarterAccounts = starterAccounts.filter((starter) => !savedAccounts.some((account) => account.email.toLowerCase() === starter.email.toLowerCase()));
-    return [...savedAccounts, ...missingStarterAccounts];
-  } catch {
-    return starterAccounts;
+async function apiRequest<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {}),
+    },
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(body || "Request failed.");
   }
+  return response.json() as Promise<T>;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [accounts, setAccounts] = useState<Account[]>(starterAccounts);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [currentAccount, setCurrentAccount] = useState<Account | null>(null);
   const [isReady, setIsReady] = useState(false);
 
+  async function refreshAccounts() {
+    if (!currentAccount?.permissions.includes("employees")) return;
+    const data = await apiRequest<{ accounts: Account[] }>("/api/accounts");
+    setAccounts(data.accounts);
+  }
+
   useEffect(() => {
-    const savedAccounts = readAccounts();
-    setAccounts(savedAccounts);
-    window.localStorage.setItem(accountsKey, JSON.stringify(savedAccounts));
-    const currentId = window.localStorage.getItem(currentKey);
-    setCurrentAccount(savedAccounts.find((account) => account.id === currentId) ?? null);
-    setIsReady(true);
+    let mounted = true;
+    apiRequest<{ account: Account | null }>("/api/auth/session")
+      .then((data) => {
+        if (!mounted) return;
+        setCurrentAccount(data.account);
+        setIsReady(true);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        setCurrentAccount(null);
+        setIsReady(true);
+      });
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  function persist(nextAccounts: Account[]) {
-    setAccounts(nextAccounts);
-    window.localStorage.setItem(accountsKey, JSON.stringify(nextAccounts));
-  }
+  useEffect(() => {
+    if (currentAccount?.permissions.includes("employees")) {
+      refreshAccounts().catch(() => setAccounts([]));
+    } else {
+      setAccounts(currentAccount ? [currentAccount] : []);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAccount?.id]);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       accounts,
       currentAccount,
       isReady,
-      login(email, password) {
-        const account = accounts.find((item) => item.email.toLowerCase() === email.toLowerCase().trim() && item.password === password);
-        if (!account) return false;
-        setCurrentAccount(account);
-        window.localStorage.setItem(currentKey, account.id);
-        return true;
+      async login(email, password) {
+        try {
+          const data = await apiRequest<{ account: Account }>("/api/auth/login", {
+            method: "POST",
+            body: JSON.stringify({ email, password }),
+          });
+          setCurrentAccount(data.account);
+          return true;
+        } catch {
+          return false;
+        }
       },
-      logout() {
+      async logout() {
+        await apiRequest("/api/auth/logout", { method: "POST", body: "{}" }).catch(() => null);
         setCurrentAccount(null);
-        window.localStorage.removeItem(currentKey);
+        setAccounts([]);
+        window.location.href = "/login";
       },
-      createAccount(account) {
-        const nextAccounts = [...accounts, { ...account, id: crypto.randomUUID() }];
-        persist(nextAccounts);
+      async createAccount(account) {
+        const data = await apiRequest<{ account: Account }>("/api/accounts", {
+          method: "POST",
+          body: JSON.stringify(account),
+        });
+        setAccounts((current) => [...current, data.account]);
       },
-      updateAccount(account) {
-        const nextAccounts = accounts.map((item) => (item.id === account.id ? account : item));
-        persist(nextAccounts);
-        if (currentAccount?.id === account.id) setCurrentAccount(account);
+      async updateAccount(account) {
+        const data = await apiRequest<{ account: Account }>(`/api/accounts/${account.id}`, {
+          method: "PUT",
+          body: JSON.stringify(account),
+        });
+        setAccounts((current) => current.map((item) => (item.id === account.id ? data.account : item)));
+        if (currentAccount?.id === account.id) setCurrentAccount(data.account);
       },
+      refreshAccounts,
       can(permission) {
         return Boolean(currentAccount?.permissions.includes(permission));
       },
@@ -169,3 +127,6 @@ export function useAuth() {
   if (!context) throw new Error("useAuth must be used inside AuthProvider");
   return context;
 }
+
+export { permissionLabels, roleDefaults };
+export type { Account, Permission };

@@ -1,17 +1,16 @@
 # 602 Ops Portal
 
-Clickable Phase 1 prototype for coffee shop and roastery operations.
+Coffee shop and roastery operations portal.
 
 ## Current Scope
 
-This version is built to load reliably on Render and let the UI/workflow be reviewed before adding platform complexity.
+This version is built to load reliably on Render and includes lightweight server-backed employee login.
 
-- No database
-- No Prisma
-- No server-side app state
+- File-backed account storage on the Render service
+- HTTP-only session cookies
+- Hashed employee passwords
 - Sample data only
-- Prototype login stored in browser local storage
-- Prototype employee account creation with permissions
+- Employee account creation with role/page permissions
 
 ## Pages
 
@@ -25,7 +24,7 @@ This version is built to load reliably on Render and let the UI/workflow be revi
 - Settings
 - Employee account management
 
-## Prototype Login
+## Login
 
 Seeded owner account:
 
@@ -48,7 +47,7 @@ Email: staff@602ops.com
 Password: Staff123!
 ```
 
-Accounts and permissions are stored in the browser for Phase 1. Clearing browser site data resets the prototype accounts.
+Accounts are stored server-side in `.data/auth.json` by default. On Render without a persistent disk, a redeploy/restart can reset account changes, so keep owner credentials handy until Postgres is added.
 
 ## Local Setup
 
@@ -68,15 +67,19 @@ Build Command: npm install && npm run build
 Start Command: npm run start
 ```
 
-No database or environment variables are required for Phase 1.
+No database is required for this lightweight version. Optional environment variables:
+
+```txt
+OWNER_PASSWORD=change-this-owner-password
+AUTH_DATA_PATH=/opt/render/project/src/.data/auth.json
+```
 
 ## Next Phase
 
 After the UI is reviewed, add back features gradually:
 
-- server-backed authentication
+- PostgreSQL and Prisma for durable account storage
 - role permissions connected to the database
-- PostgreSQL and Prisma
 - real scheduling
 - HR tracking
 - inventory updates

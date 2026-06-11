@@ -36,7 +36,7 @@ export const operationsGroups = [
       { task: "HB opening checklist", location: "602 HB", owner: "Hannah Brooks", status: "Working", priority: "High", due: "Today 7:00 AM" },
       { task: "GW patio deep clean", location: "602 GW", owner: "Ari Lopez", status: "Stuck", priority: "Medium", due: "Today 2:00 PM" },
       { task: "CM espresso grinder burr check", location: "602 CM", owner: "Mina Carter", status: "Not Started", priority: "High", due: "Tomorrow" },
-      { task: "Manager shift notes review", location: "All Stores", owner: "Daniel Othman", status: "Done", priority: "Low", due: "Daily" },
+      { task: "Manager shift notes review", location: "All Stores", owner: "Danny Othman", status: "Done", priority: "Low", due: "Daily" },
     ],
   },
   {
@@ -52,7 +52,7 @@ export const operationsGroups = [
     title: "Maintenance and Facilities",
     color: "danger",
     items: [
-      { task: "HB ice machine service call", location: "602 HB", owner: "Daniel Othman", status: "Stuck", priority: "Urgent", due: "Today" },
+      { task: "HB ice machine service call", location: "602 HB", owner: "Danny Othman", status: "Stuck", priority: "Urgent", due: "Today" },
       { task: "CM back door keypad", location: "602 CM", owner: "Caleb Morris", status: "Waiting", priority: "Medium", due: "Wed" },
       { task: "GW floor mat replacement", location: "602 GW", owner: "Gina Wells", status: "Not Started", priority: "Low", due: "Next Week" },
     ],
@@ -63,7 +63,7 @@ export const operationsGroups = [
     items: [
       { task: "Roast 120 lb house blend", location: "Roastery", owner: "Riley Stone", status: "Working", priority: "High", due: "Today" },
       { task: "Bag retail coffee for HB/GW/CM", location: "Roastery", owner: "Riley Stone", status: "Not Started", priority: "High", due: "Tomorrow" },
-      { task: "Green coffee receiving log", location: "Roastery", owner: "Daniel Othman", status: "Waiting", priority: "Medium", due: "Fri" },
+      { task: "Green coffee receiving log", location: "Roastery", owner: "Danny Othman", status: "Waiting", priority: "Medium", due: "Fri" },
     ],
   },
 ];
