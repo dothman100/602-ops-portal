@@ -4,7 +4,6 @@ const sessionCookie = "six02_session";
 
 export function middleware(request: NextRequest) {
   const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
-  const isLogin = request.nextUrl.pathname === "/login";
   const hasSession = Boolean(request.cookies.get(sessionCookie)?.value);
 
   if (isDashboard && !hasSession) {
