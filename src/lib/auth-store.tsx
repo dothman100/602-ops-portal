@@ -48,7 +48,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    apiRequest<{ account: Account | null }>("/api/auth/session")
+    apiRequest<{ account: Account | null }>("/api/session")
       .then((data) => {
         if (!mounted) return;
         setCurrentAccount(data.account);
@@ -79,7 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isReady,
       async login(email, password) {
         try {
-          const data = await apiRequest<{ account: Account }>("/api/auth/login", {
+          const data = await apiRequest<{ account: Account }>("/api/login", {
             method: "POST",
             body: JSON.stringify({ email, password }),
           });
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       },
       async logout() {
-        await apiRequest("/api/auth/logout", { method: "POST", body: "{}" }).catch(() => null);
+        await apiRequest("/api/logout", { method: "POST", body: "{}" }).catch(() => null);
         setCurrentAccount(null);
         setAccounts([]);
         window.location.href = "/login";
